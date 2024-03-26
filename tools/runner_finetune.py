@@ -65,7 +65,15 @@ class Acc_Metric:
 
 def run_net(args, config, train_writer=None, val_writer=None):
     logger = get_logger(args.log_name)
-    # build dataset
+    # build dataset with noise
+
+    (train_sampler_noise, train_dataloader_noise), (_, test_dataloader_noise),= builder.dataset_builder(args, config.dataset.train), \
+                                                            builder.dataset_builder(args, config.dataset.val)
+    # set noise as false
+    config.dataset.train._base_.ADD_NOISE = False
+    config.dataset.val._base_.ADD_NOISE = False
+
+    # build dataset without noise
     (train_sampler, train_dataloader), (_, test_dataloader),= builder.dataset_builder(args, config.dataset.train), \
                                                             builder.dataset_builder(args, config.dataset.val)
     # build model

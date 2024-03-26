@@ -13,7 +13,7 @@ from torch.utils.data import Dataset
 from .build import DATASETS
 from utils.logger import *
 import torch
-
+from datasets.Noise import AddNoise
 warnings.filterwarnings('ignore')
 
 
@@ -60,6 +60,7 @@ class ModelNet(Dataset):
         self.uniform = True
         split = config.subset
         self.subset = config.subset
+        self.add_noise = config.ADD_NOISE
 
         if self.num_category == 10:
             self.catfile = os.path.join(self.root, 'modelnet10_shape_names.txt')
@@ -114,6 +115,9 @@ class ModelNet(Dataset):
                 print_log('Load processed data from %s...' % self.save_path, logger = 'ModelNet')
                 with open(self.save_path, 'rb') as f:
                     self.list_of_points, self.list_of_labels = pickle.load(f)
+                if self.add_noise:
+                    noise = AddNoise()
+                    self.list_of_points, self.list_of_labels = noise.addNoise(self.list_of_points, self.list_of_labels)
 
     def __len__(self):
         return len(self.datapath)
