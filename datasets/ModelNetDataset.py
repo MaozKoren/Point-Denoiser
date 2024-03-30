@@ -13,7 +13,7 @@ from torch.utils.data import Dataset
 from .build import DATASETS
 from utils.logger import *
 import torch
-from datasets.Noise import AddNoise
+from datasets.noise import Noise
 warnings.filterwarnings('ignore')
 
 
@@ -115,9 +115,10 @@ class ModelNet(Dataset):
                 print_log('Load processed data from %s...' % self.save_path, logger = 'ModelNet')
                 with open(self.save_path, 'rb') as f:
                     self.list_of_points, self.list_of_labels = pickle.load(f)
-                if self.add_noise:
-                    noise = AddNoise()
-                    self.list_of_points, self.list_of_labels = noise.addNoise(self.list_of_points, self.list_of_labels)
+                # if self.add_noise:
+                #     noise = Noise()
+                #     self.list_of_points = noise.addNoise(self.list_of_points)
+                #     print('noise added')
 
     def __len__(self):
         return len(self.datapath)

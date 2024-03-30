@@ -11,6 +11,7 @@ from datasets import data_transforms
 # from pointnet2_ops import pointnet2_utils
 from pointnet import pointnet2 as pointnet2_utils
 from torchvision import transforms
+from datasets.noise import Noise
 
 def gather_new(x, idx):
     B, C, N = x.size()
@@ -65,13 +66,10 @@ class Acc_Metric:
 
 def run_net(args, config, train_writer=None, val_writer=None):
     logger = get_logger(args.log_name)
-    # build dataset with noise
 
-    (train_sampler_noise, train_dataloader_noise), (_, test_dataloader_noise),= builder.dataset_builder(args, config.dataset.train), \
-                                                            builder.dataset_builder(args, config.dataset.val)
     # set noise as false
-    config.dataset.train._base_.ADD_NOISE = False
-    config.dataset.val._base_.ADD_NOISE = False
+    # config.dataset.train._base_.ADD_NOISE = False
+    # config.dataset.val._base_.ADD_NOISE = False
 
     # build dataset without noise
     (train_sampler, train_dataloader), (_, test_dataloader),= builder.dataset_builder(args, config.dataset.train), \
@@ -130,16 +128,27 @@ def run_net(args, config, train_writer=None, val_writer=None):
         num_iter = 0
         base_model.train()  # set model to training mode
         n_batches = len(train_dataloader)
-
+        NOISE_TYPE = config.dataset.train._base_.ADD_NOISE.TYPE
+        INTENSITY = config.dataset.train._base_.ADD_NOISE.INTENSITY
         npoints = config.npoints
         for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader):
+            # (taxonomy_ids_noise, model_ids_noise, data_noise) = next(iter(train_dataloader_noise))
             num_iter += 1
             n_itr = epoch * n_batches + idx
             
             data_time.update(time.time() - batch_start_time)
-            
+
+            # add noise
+            noise = Noise(type=NOISE_TYPE, intensity=INTENSITY)
+            data[0] = noise.addNoise(data[0], 100)
+
             points = data[0].cuda()
-            label = data[1].cuda()
+            # points = data_noise[0].cuda()
+            label = data[1].cuda() # this is clean ground truth - keep this!
+            # print('points with noise:')
+            # print(data_noise[0].cuda())
+            # print('points clean:')
+            # print(points)
 
             if npoints == 1024:
                 point_all = 1200
