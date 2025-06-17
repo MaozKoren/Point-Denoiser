@@ -21,6 +21,8 @@ Install the required packages with:
 ```bash
 pip install -r requirements.txt
 
+---
+
 # Pre-train the ViT Encoder-Decoder on ShapeNet55 Dataset:
 
 CUDA_VISIBLE_DEVICES=0 python main.py --config cfgs/pretrain_Point_MAE_ViT.yaml --exp_name pretrain_ViT_Transformer
