@@ -188,10 +188,18 @@ def run_net(args, config, train_writer=None, val_writer=None):
         print_log('Using Data parallel ...' , logger = logger)
         base_model = nn.DataParallel(base_model).cuda()
 
-    # Freeze decoder parameters
-    # print('Freezing Decoder Parameters...')
-    # for param in base_model.module.MAE_decoder.parameters():
-    #     param.requires_grad = False
+    if config.ADD_NOISE.FREEZE:
+        # Freeze decoder parameters
+        print('Freezing Decoder Parameters...')
+        for param in base_model.module.MAE_decoder.parameters():
+            param.requires_grad = False
+
+        print('Freezing Encoder Layers except the last two...')
+        # Freeze all encoder layers except the last two
+        for i, block in enumerate(base_model.module.MAE_decoder.blocks):
+            if i < len(base_model.module.MAE_decoder.blocks) - 2:
+                for param in block.parameters():
+                    param.requires_grad = False
 
     # optimizer & scheduler
     optimizer, scheduler = builder.build_opti_sche(base_model, config)
@@ -203,12 +211,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
     # training
     # base_model.zero_grad()
     save_img = False
-
-    if config.ADD_NOISE.BOOL:
-        NOISE_TYPE = config.ADD_NOISE.TYPE
-        INTENSITY = config.ADD_NOISE.INTENSITY
-        # noise = Noise(type=NOISE_TYPE, intensity=INTENSITY)
-        # denoiser = Point_Denoiser(config=config.model, encoder=base_model.module.MAE_encoder).cuda()
 
 # Move to new function to train classification net only
     if config.ADD_NOISE.CLASSIFICATION:
@@ -224,37 +226,19 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
         # ________________________________________________________________________________
         # Subset creation (get the first `subset_size` batches)
-        # subset_size = 1
-        # train_subset = []
-        # for idx, batch in enumerate(train_dataloader):
-        #     train_subset.append(batch)
-        #     if idx + 1 == subset_size:
-        #         break
-        # train_dataloader = train_subset
+        subset_size = 1
+        train_subset = []
+        for idx, batch in enumerate(train_dataloader):
+            train_subset.append(batch)
+            if idx + 1 == subset_size:
+                break
+        train_dataloader = train_subset
         # ________________________________________________________________________________
         lossList = []
         valLossList = []
         accuracyList = []
         valAccuracyList = []
         ratioList = []
-
-        # ________________________________________________________________________________
-        # create fixed noise points
-        # B, P, C = [128, 1024, 3]
-        # N = 700
-        # phi = torch.rand(B, N, 1) * 2 * torch.pi  # Random angles
-        # costheta = torch.rand(B, N, 1) * 2 - 1  # Random cos(theta)
-        # theta = torch.acos(costheta)  # theta from cos(theta)
-        # r = torch.rand(B, N, 1) ** (1 / 3)  # Uniformly distributed radius
-        #
-        # # Convert to Cartesian coordinates (x, y, z) in 3D space
-        # x = r * torch.sin(theta) * torch.cos(phi)
-        # y = r * torch.sin(theta) * torch.sin(phi)
-        # z = r * torch.cos(theta)
-        #
-        # # Stack to form noise points within the unit sphere
-        # noise_points = torch.cat((x, y, z), dim=2)  # Shape: [B, N, 3]
-        # noise_points = noise_points.cuda()
 
         # del base_model.MAE_decoder  # Free memory after loading
 
@@ -300,12 +284,8 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 if config.ADD_NOISE.BOOL:
                     # create noise
                     # points, labels = perturb_points(points, N=256, std=0.04)
-                    #### points, labels = add_noise_in_sphere(points, N=700, fixed=noise_points)
-                    # plot_filtered_points(points, filename=os.path.join('training_vis', f'plot_GT_epoch_{epoch}'))
                     points_GT = points.clone()
                     points, labels = add_noise_in_sphere(points, N=700)
-                    # ratioList.append(mean_ratio_noise_inside_shape)
-                    # print(f'labels shape is: {labels.shape}')
                     loss, accuracy, filtered_points, filtered_labels, all_vis_points = base_model(pts=points, labels=labels)
                     if epoch % 10 == 0 and not save_img:
                         # plot_filtered_points(filtered_points, filename=os.path.join('training_vis', f'plot_training_epoch_{epoch}'))
@@ -322,7 +302,10 @@ def run_net(args, config, train_writer=None, val_writer=None):
                     #     save_img = True
                     #     print('saved img')
                 else:
+                    print("Pre-Train ViT")
+                    # points, labels = add_noise_in_sphere(points, N=700)
                     loss = base_model(points)
+                    accuracy = 0
                     # loss, gt, full_center, reconstruction = base_model(points)
                     # if epoch % 10 == 0 and taxonomy_ids[0] == "03211117" and "6a85470c071da91a73c24ae76518fe62":
                     #     save_training_img(epoch, gt, full_center, reconstruction)
@@ -391,11 +374,11 @@ def run_net(args, config, train_writer=None, val_writer=None):
             # if (config.max_epoch -accuracy.item() epoch) < 10:
             #     builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, f'ckpt-epoch-{epoch:03d}', args, logger = logger)
             # validation here (at end of epoch)
-            valLoss, valAcc = validate_classification(base_model, test_dataloader, epoch, args, config, logger)
-            valLossList.append(valLoss)
-            valAccuracyList.append(valAcc)
-        plot_training_curve_loss({'Train Loss': lossList, 'Validation loss': valLossList})
-        plot_training_curve_acc({'Train Accuracy': accuracyList, 'Validation Accuracy': valAccuracyList})
+            # valLoss, valAcc = validate_classification(base_model, test_dataloader, epoch, args, config, logger)
+            # valLossList.append(valLoss)
+            # valAccuracyList.append(valAcc)
+        # plot_training_curve_loss({'Train Loss': lossList, 'Validation loss': valLossList})
+        # plot_training_curve_acc({'Train Accuracy': accuracyList, 'Validation Accuracy': valAccuracyList})
         # Avg_ratio_of_noise_points_inside_shape = sum(ratioList) / len(ratioList)
         # print(f'Avg ratio of noise points inside shape: {Avg_ratio_of_noise_points_inside_shape}')
         if train_writer is not None:
