@@ -32,12 +32,12 @@ CUDA_VISIBLE_DEVICES=0 python main.py --start_ckpts experiments/pretrain_Point_M
 --config cfgs/denoiseClassificationSpherePreTrainingFull.yaml --exp_name denoiseClassification
 ```
 
-### Test the trained Denoiser:
+### Test the trained Denoiser on ModelNet40:
 ```bash
 python main_vis.py --test \
-  --ckpts experiments/denoiseClassificationSpherePreTrainingFull/cfgs/denoiseClassificationPosEmbd/ckpt-last.pth \
+  --ckpts experiments/denoiseClassificationSpherePreTrainingFull/cfgs/denoiseClassification/ckpt-last.pth \
   --config cfgs/denoiseClassificationSpherePreTrainingFullWithModelNet40.yaml \
-  --exp_name denoiseClassificationPosEmbd
+  --exp_name denoiseClassificationTest
 ```
 
 
