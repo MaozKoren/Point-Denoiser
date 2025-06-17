@@ -28,10 +28,8 @@ CUDA_VISIBLE_DEVICES=0 python main.py --config cfgs/pretrain_Point_MAE_ViT.yaml 
 
 ### Train the Classification Head:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python main.py \
-  --start_ckpts experiments/denoiseClassificationSpherePreTraining/cfgs/denoiseClassificationSpherePreTraining/ckpt-last.pth \
-  --config cfgs/denoiseClassificationSpherePreTrainingFull.yaml \
-  --exp_name denoiseClassificationRandomUnitNoise
+CUDA_VISIBLE_DEVICES=0 python main.py --start_ckpts experiments/pretrain_Point_MAE_ViT/cfgs/pretrain_ViT_Transformer/ckpt-last.pth
+--config cfgs/denoiseClassificationSpherePreTrainingFull.yaml --exp_name denoiseClassification
 ```
 
 ### Test the trained Denoiser:
