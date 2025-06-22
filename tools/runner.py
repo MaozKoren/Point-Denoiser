@@ -231,8 +231,8 @@ def test(base_model, test_dataloader, args, config, logger = None):
                     points_noise, labels = perturb_points(points_noise, N=256, std=0.02)
                     # points_noise, labels, inside_mask_full = add_noise_in_sphere(points_noise, N=700, check_convex=True)
                     if config.ADD_NOISE.CLASSIFICATION == False:
-                        vis_points, centers, acc, TP, TN, FP, FN, cdl2, neighborhood_vis, classification_logits = base_model(pts=points_noise, labels=labels, vis=True)
-                        # vis_points, centers, acc, acc_outside, TP, TN, FP, FN, cdl2, neighborhood_vis, classification_logits = base_model(pts=points_noise, labels=labels, inside_mask=inside_mask_full, vis=True)
+                        vis_points, centers, acc, TP, TN, FP, FN, cdl2, neighborhood_vis, classification_logits, vis_labels = base_model(pts=points_noise, labels=labels, vis=True)
+                        # vis_points, centers, acc, acc_outside, TP, TN, FP, FN, cdl2, neighborhood_vis, classification_logits, vis_labels = base_model(pts=points_noise, labels=labels, inside_mask=inside_mask_full, vis=True)
                         print(f'id: {taxonomy_ids[0]}')
                         clean_points = vis_points
                         classification_acc.append(acc)
@@ -249,7 +249,7 @@ def test(base_model, test_dataloader, args, config, logger = None):
                     NOISE_TYPE = config.ADD_NOISE.TYPE
                     noise = Noise(type=NOISE_TYPE)
                     points = noise.addNoise(points, mirror_plane=config.ADD_NOISE.MIRROR_PLANE)
-                    dense_points, vis_points, centers, TP, TN, FP, FN, neighborhood_vis, classification_logits = base_model(points, vis=True)
+                    dense_points, vis_points, centers, TP, TN, FP, FN, neighborhood_vis, classification_logits, vis_labels = base_model(points, vis=True)
             else:
                 print('No Denoising')
                 dense_points, vis_points, centers, TP, TN, FP, FN = base_model(points, vis=True)
@@ -295,6 +295,7 @@ def test(base_model, test_dataloader, args, config, logger = None):
                 # Plot Heatmap of point cloud along with classification_logits values to understand what the classification net predicts
                 plot_classification_logits_heatmap(neighborhood_vis,
                                                    classification_logits,
+                                                   vis_labels,
                                                    os.path.join(data_path, f'cls_logits_heatmap.png'),
                                                    a, b)
             else:
@@ -302,11 +303,6 @@ def test(base_model, test_dataloader, args, config, logger = None):
                 np.savetxt(os.path.join(data_path, 'gt.txt'), points, delimiter=';')
                 points = misc.get_ptcloud_img(points, a, b)
                 final_image.append(points[150:650, 150:675, :])
-
-                # centers = centers.squeeze().detach().cpu().numpy()
-                # np.savetxt(os.path.join(data_path,'center.txt'), centers, delimiter=';')
-                # centers = misc.get_ptcloud_img(centers)
-                # final_image.append(centers)
 
                 vis_points = vis_points.squeeze().detach().cpu().numpy()
                 np.savetxt(os.path.join(data_path, 'vis.txt'), vis_points, delimiter=';')
@@ -322,20 +318,6 @@ def test(base_model, test_dataloader, args, config, logger = None):
                 img = np.concatenate(final_image, axis=1)
                 img_path = os.path.join(data_path, f'plot.jpg')
                 cv2.imwrite(img_path, img)
-
-            # vis_points = vis_points.squeeze().detach().cpu().numpy()
-            # np.savetxt(os.path.join(data_path, 'vis.txt'), vis_points, delimiter=';')
-            # vis_points = misc.get_ptcloud_img(vis_points,a,b)
-            #
-            # final_image.append(vis_points[150:650,150:675,:])
-            #
-            # # dense_points = dense_points.squeeze().detach().cpu().numpy()
-            # # np.savetxt(os.path.join(data_path,'dense_points.txt'), dense_points, delimiter=';')
-            # # dense_points = misc.get_ptcloud_img(dense_points,a,b)
-            # # final_image.append(dense_points[150:650,150:675,:])
-            #
-            # fig = plot_point_clouds(points, points_noise, clean_points, a, b)
-            # fig.savefig(data_path)
 
             if idx > 1500:
                 print(f'mean classification accuracy: {sum(classification_acc) / len(classification_acc)}')

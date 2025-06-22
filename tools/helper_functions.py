@@ -919,7 +919,7 @@ def filter_neighborhood_points(neighborhood, center, cell_radius):
 #     plt.close()
 
 
-def plot_classification_logits_heatmap(neighborhood_vis, classification_logits, path, roll=30, pitch=60):
+def plot_classification_logits_heatmap(neighborhood_vis, classification_logits, vis_labels, path, roll=30, pitch=60):
     """
     Plots neighborhood_vis points in 3D with colors based on classification_logits values,
     and applies a custom camera orientation using roll and pitch.
@@ -929,6 +929,8 @@ def plot_classification_logits_heatmap(neighborhood_vis, classification_logits, 
         neighborhood_vis = neighborhood_vis.detach().cpu().numpy()
     if isinstance(classification_logits, torch.Tensor):
         classification_logits = classification_logits.detach().cpu().numpy()
+    if isinstance(vis_labels, torch.Tensor):
+        vis_labels = vis_labels.detach().cpu().numpy()
 
     # Create a 3D plot
     fig = plt.figure(figsize=(8, 8))
@@ -966,7 +968,7 @@ def plot_classification_logits_heatmap(neighborhood_vis, classification_logits, 
 
     # Save the data to .npz
     base, _ = os.path.splitext(path)
-    np.savez_compressed(base + "_data.npz", neighborhood_vis=neighborhood_vis, classification_logits=classification_logits)
+    np.savez_compressed(base + "_data.npz", neighborhood_vis=neighborhood_vis, classification_logits=classification_logits, vis_labels=vis_labels)
 
 
 def farthest_squared_distance(src, tgt, chunk_size=1024):
@@ -1003,4 +1005,35 @@ def farthest_squared_distance(src, tgt, chunk_size=1024):
 
     return farthest_distances.mean()
 
+from collections import defaultdict
 
+
+def filter_logits_with_voting(neighborhood_vis, classification_logits,
+                              precision=5,
+                              noise_threshold=0.5,
+                              return_cleaned=True):
+    neighborhood_vis = neighborhood_vis.reshape(-1, 3)
+    classification_logits = classification_logits.reshape(-1)
+    # rounded_coords = np.round(neighborhood_vis, precision)
+    vote_dict = defaultdict(lambda: [0, 0])  # [GT_votes, Noise_votes]
+
+    for coord, logit in zip(neighborhood_vis, classification_logits):
+        key = tuple(coord)
+        if logit > 0:
+            vote_dict[key][1] += 1  # Noise
+        else:
+            vote_dict[key][0] += 1  # GT
+
+    cleaned_coords = []
+
+    for coord, (gt_votes, noise_votes) in vote_dict.items():
+        total_votes = gt_votes + noise_votes
+        noise_ratio = noise_votes / total_votes
+        is_noise = noise_ratio > noise_threshold
+        if not is_noise:
+            cleaned_coords.append(coord)
+
+    # cleaned_coords = np.array(cleaned_coords)
+
+    if return_cleaned:
+        return torch.Tensor(cleaned_coords)
