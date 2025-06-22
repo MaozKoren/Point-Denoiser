@@ -31,6 +31,7 @@ CUDA_VISIBLE_DEVICES=0 python main.py --config cfgs/pretrain_Point_MAE_ViT.yaml 
 CUDA_VISIBLE_DEVICES=0 python main.py --start_ckpts experiments/pretrain_Point_MAE_ViT/cfgs/pretrain_ViT_Transformer/ckpt-last.pth
 --config cfgs/denoiseClassificationSpherePreTrainingFull.yaml --exp_name denoiseClassification
 ```
+![Results](Denoising_pic.jpg)
 
 ### Test the trained Denoiser on ModelNet40:
 ```bash
@@ -39,7 +40,7 @@ python main_vis.py --test \
   --config cfgs/denoiseClassificationSpherePreTrainingFullWithModelNet40.yaml \
   --exp_name denoiseClassificationTest
 ```
-
+![Results](Denoising_pic_2.jpg)
 
 
 
