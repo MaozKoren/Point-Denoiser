@@ -13,7 +13,7 @@ from knn_cuda import KNN # temporary disables to run on windows
 from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2 , ChamferDistanceL2_D1D2 # temporary disables to run on windows
 import copy
 from datasets.noise import Noise
-from tools.helper_functions import farthest_squared_distance, count_repeated_values, save_latent_pic, get_intermediate_output, filter_neighborhood_points
+from tools.helper_functions import farthest_squared_distance, count_repeated_values, save_latent_pic, get_intermediate_output, filter_neighborhood_points, filter_logits_with_voting
 from utils.misc import statistical_outlier_std, compute_outlier_loss
 
 def adjust_range(min_value, max_value, N):
@@ -1862,10 +1862,15 @@ class Point_Denoiser_Full(nn.Module):
                 filtered_GT.view(-1, 3).unsqueeze(0),  # actual GT points
                 filtered_points.unsqueeze(0))  # predicted GT points
             print(f'Chamfer Distance L2: {CDL2}')
+
+            cleaned_coords = filter_logits_with_voting(neighborhood_vis, classification_logits)
+
             if inside_mask is not None:
-                return filtered_points, center, accuracy, accuracy_outside, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits
+                # return filtered_points, center, accuracy, accuracy_outside, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits, vis_labels
+                return cleaned_coords, center, accuracy, accuracy_outside, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits, vis_labels
             else:
-                return filtered_points, center, accuracy, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits
+                # return filtered_points, center, accuracy, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits, vis_labels
+                return cleaned_coords, center, accuracy, TP, TN, FP, FN, CDL2, neighborhood_vis, classification_logits, vis_labels
         else:
             classification_logits = classification_logits.view(128, 70, self.group_size, 1)  # Reshape to match labels' shape [128, 26, 32, 1]
             # classification_logits = classification_logits.view(128, 70, self.group_size, 1)  # Reshape to match labels' shape [128, 26, 32, 1]
