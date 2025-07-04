@@ -226,13 +226,13 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
         # ________________________________________________________________________________
         # Subset creation (get the first `subset_size` batches)
-        subset_size = 1
-        train_subset = []
-        for idx, batch in enumerate(train_dataloader):
-            train_subset.append(batch)
-            if idx + 1 == subset_size:
-                break
-        train_dataloader = train_subset
+        # subset_size = 1
+        # train_subset = []
+        # for idx, batch in enumerate(train_dataloader):
+        #     train_subset.append(batch)
+        #     if idx + 1 == subset_size:
+        #         break
+        # train_dataloader = train_subset
         # ________________________________________________________________________________
         lossList = []
         valLossList = []
@@ -302,8 +302,8 @@ def run_net(args, config, train_writer=None, val_writer=None):
                     #     save_img = True
                     #     print('saved img')
                 else:
-                    print("Pre-Train ViT")
-                    # points, labels = add_noise_in_sphere(points, N=700)
+                    # print("Pre-Train ViT")
+                    points, labels = add_noise_in_sphere(points, N=700)
                     loss = base_model(points)
                     accuracy = 0
                     # loss, gt, full_center, reconstruction = base_model(points)
