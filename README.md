@@ -11,7 +11,7 @@ This repository contains code for a point cloud denoising model based on **Point
 
 Make sure your environment meets the following requirements:
 
-- Python 3.7+
+- Python 3.10
 - CUDA-compatible GPU
 - PyTorch (version compatible with your CUDA)
 - Other Python dependencies listed in `requirements.txt`
